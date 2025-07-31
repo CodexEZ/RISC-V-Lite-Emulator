@@ -90,17 +90,44 @@ void execute_instruction(uint32_t instr) {
                     break;
             }
             break;
-        case 0x63: // BEQ, BNE
-            if (funct3 == 0x0) { // BEQ
-                if (cpu.reg[rs1] == cpu.reg[rs2]) {
-                    cpu.pc += imm_b;
-                    return;
-                }
-            } else if (funct3 == 0x1) { // BNE
-                if (cpu.reg[rs1] != cpu.reg[rs2]) {
-                    cpu.pc += imm_b;
-                    return;
-                }
+        case 0x63: // Branch instructions
+            switch (funct3) {
+                case 0x0: // BEQ
+                    if (cpu.reg[rs1] == cpu.reg[rs2]) {
+                        cpu.pc += imm_b;
+                        return;
+                    }
+                    break;
+                case 0x1: // BNE
+                    if (cpu.reg[rs1] != cpu.reg[rs2]) {
+                        cpu.pc += imm_b;
+                        return;
+                    }
+                    break;
+                case 0x4: // BLT
+                    if ((int32_t)cpu.reg[rs1] < (int32_t)cpu.reg[rs2]) {
+                        cpu.pc += imm_b;
+                        return;
+                    }
+                    break;
+                case 0x5: // BGE
+                    if ((int32_t)cpu.reg[rs1] >= (int32_t)cpu.reg[rs2]) {
+                        cpu.pc += imm_b;
+                        return;
+                    }
+                    break;
+                case 0x6: // BLTU
+                    if (cpu.reg[rs1] < cpu.reg[rs2]) {
+                        cpu.pc += imm_b;
+                        return;
+                    }
+                    break;
+                case 0x7: // BGEU
+                    if (cpu.reg[rs1] >= cpu.reg[rs2]) {
+                        cpu.pc += imm_b;
+                        return;
+                    }
+                    break;
             }
             break;
         case 0x6F: // JAL

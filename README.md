@@ -1,15 +1,22 @@
 # RISC-V Virtual Machine and Assembler
 
-This project provides a simple virtual machine (VM) and an assembler for a subset of the RISC-V instruction set architecture.
+This project provides a simple virtual machine (VM) and a two-pass assembler for a subset of the RISC-V 32-bit integer instruction set (RV32I).
+
+## Features
+
+*   **RISC-V Core:** A 32-bit VM with 32 general-purpose registers.
+*   **Two-Pass Assembler:** Translates RISC-V assembly into machine code, with support for forward-referencing labels.
+*   **Dynamic Loading:** The VM loads a binary file at runtime, so no recompilation is needed to run different programs.
+*   **Custom Instructions:** Includes `print` and `input` for basic I/O operations.
 
 ## Project Structure
 
-- `vm.c`, `vm.h`, `execute.c`, `loader.c`, `main.c`: Source code for the virtual machine.
-- `assembler.c`: Source code for the assembler.
-- `program.s`: An example assembly language program.
-- `program.bin`: The assembled binary of `program.s`.
-- `vm.exe`: The compiled virtual machine executable.
-- `assembler.exe`: The compiled assembler executable.
+-   `vm.c`, `vm.h`, `execute.c`, `loader.c`, `main.c`: Source code for the virtual machine.
+-   `assembler.c`: Source code for the assembler.
+-   `program.s`: An example assembly language program.
+-   `program.bin`: The assembled binary of `program.s`.
+-   `vm.exe`: The compiled virtual machine executable.
+-   `assembler.exe`: The compiled assembler executable.
 
 ## Compilation
 
@@ -61,18 +68,50 @@ The VM is hardcoded to load and execute a file named `program.bin` from the `vm/
 
 The VM will then execute the instructions from `vm/program.bin`.
 
-## Example Workflow
+## Example Programs
 
-1.  **Write your assembly code:** Create or edit a `.s` file (e.g., `my_program.s`).
-2.  **Assemble it:**
-    ```bash
-    ./vm/assembler.exe vm/my_program.s vm/program.bin
-    ```
-    *Note: The output file must be named `program.bin` and placed in the `vm/` directory for the VM to find it.*
-3.  **Run the VM:**
-    ```bash
-    ./vm/vm.exe
-    ```
+Here are a few examples of programs you can write and run.
+
+### Example 1: Simple Arithmetic
+
+This program adds two numbers and prints the result.
+
+```riscv
+# program.s
+addi x1, x0, 10   # Load 10 into register x1
+addi x2, x0, 20   # Load 20 into register x2
+add x3, x1, x2    # x3 = x1 + x2
+print x3          # Print the value of x3
+halt              # Stop the machine
+```
+
+### Example 2: User Input
+
+This program asks the user for two numbers, adds them, and prints the sum.
+
+```riscv
+# program.s
+input x1          # Get first number from user
+input x2          # Get second number from user
+add x3, x1, x2    # x3 = x1 + x2
+print x3          # Print the sum
+halt
+```
+
+### Example 3: Looping
+
+This program asks for a number and then counts from 0 up to that number.
+
+```riscv
+# program.s
+input x1          # Get the upper limit from the user
+addi x2, x0, 0    # Initialize counter (x2) to 0
+loop:
+    print x2          # Print the current count
+    addi x2, x2, 1    # Increment counter
+    blt x2, x1, loop  # If x2 < x1, jump back to 'loop'
+halt
+```
 
 ## Supported Instructions
 
@@ -104,6 +143,10 @@ The assembler and VM support the following instructions:
 ### B-type
 - `beq rs1, rs2, label`
 - `bne rs1, rs2, label`
+- `blt rs1, rs2, label`
+- `bge rs1, rs2, label`
+- `bltu rs1, rs2, label`
+- `bgeu rs1, rs2, label`
 
 ### Custom Instructions
 - `halt`: Stops the VM execution.

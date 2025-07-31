@@ -91,11 +91,12 @@ uint32_t assemble_b_type(char* mnemonic, char* rs1_str, char* rs2_str, char* lab
     uint32_t opcode = 0x63;
     uint32_t funct3 = 0;
 
-    if (strcmp(mnemonic, "beq") == 0) {
-        funct3 = 0x0;
-    } else if (strcmp(mnemonic, "bne") == 0) {
-        funct3 = 0x1;
-    }
+    if (strcmp(mnemonic, "beq") == 0) { funct3 = 0x0; }
+    else if (strcmp(mnemonic, "bne") == 0) { funct3 = 0x1; }
+    else if (strcmp(mnemonic, "blt") == 0) { funct3 = 0x4; }
+    else if (strcmp(mnemonic, "bge") == 0) { funct3 = 0x5; }
+    else if (strcmp(mnemonic, "bltu") == 0) { funct3 = 0x6; }
+    else if (strcmp(mnemonic, "bgeu") == 0) { funct3 = 0x7; }
 
     uint32_t imm_12 = (offset >> 12) & 0x1;
     uint32_t imm_10_5 = (offset >> 5) & 0x3F;
@@ -121,14 +122,33 @@ int main(int argc, char *argv[]) {
     char line[MAX_LINE_LEN];
     int address = 0;
     while (fgets(line, sizeof(line), in)) {
-        char* token = strtok(line, " \t\n,()");
-        if (token && token[strlen(token) - 1] == ':') {
+        char line_copy[MAX_LINE_LEN];
+        strcpy(line_copy, line);
+        char* token = strtok(line_copy, " \t\n");
+
+        if (!token) continue; // Skip empty line
+
+        int has_instruction = 0;
+        if (token[strlen(token) - 1] == ':') {
+            // It's a label
             token[strlen(token) - 1] = '\0';
             strcpy(labels[label_count].name, token);
             labels[label_count].address = address;
             label_count++;
+            
+            // Check for instruction on the same line
+            token = strtok(NULL, " \t\n");
+            if (token) {
+                has_instruction = 1;
+            }
+        } else {
+            // Not a label, so it must be an instruction
+            has_instruction = 1;
         }
-        address += 4;
+        
+        if (has_instruction) {
+            address += 4;
+        }
     }
 
     fseek(in, 0, SEEK_SET);
@@ -143,9 +163,16 @@ int main(int argc, char *argv[]) {
     address = 0;
     while (fgets(line, sizeof(line), in)) {
         char* mnemonic = strtok(line, " \t\n,()");
-        if (!mnemonic || mnemonic[strlen(mnemonic)-1] == ':') {
-            address += 4;
-            continue;
+        if (!mnemonic) {
+            continue; // Skip empty lines
+        }
+
+        // If the line starts with a label, skip the label part
+        if (mnemonic[strlen(mnemonic) - 1] == ':') {
+            mnemonic = strtok(NULL, " \t\n,()");
+            if (!mnemonic) {
+                continue; // Line only contained a label
+            }
         }
 
         uint32_t instruction = 0;
@@ -169,7 +196,7 @@ int main(int argc, char *argv[]) {
             char* imm = strtok(NULL, " \t\n,()");
             char* rs1 = strtok(NULL, " \t\n,()");
             instruction = assemble_s_type(mnemonic, rs2, imm, rs1);
-        } else if (strcmp(mnemonic, "beq") == 0 || strcmp(mnemonic, "bne") == 0) {
+        } else if (strcmp(mnemonic, "beq") == 0 || strcmp(mnemonic, "bne") == 0 || strcmp(mnemonic, "blt") == 0 || strcmp(mnemonic, "bge") == 0 || strcmp(mnemonic, "bltu") == 0 || strcmp(mnemonic, "bgeu") == 0) {
             char* rs1 = strtok(NULL, " \t\n,()");
             char* rs2 = strtok(NULL, " \t\n,()");
             char* label = strtok(NULL, " \t\n,()");
@@ -184,8 +211,10 @@ int main(int argc, char *argv[]) {
             instruction = (parse_reg(rd) << 7) | 0x0C;
         }
 
-        fwrite(&instruction, sizeof(instruction), 1, out);
-        address += 4;
+        if (instruction != 0) {
+            fwrite(&instruction, sizeof(instruction), 1, out);
+            address += 4;
+        }
     }
 
     fclose(in);

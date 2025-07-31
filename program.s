@@ -1,5 +1,7 @@
 input x1
-input x2
-add x3, x1, x2
-print x3
+addi x2, x0, 0
+loop:
+print x2
+addi x2, x2, 1
+blt x2, x1, loop
 halt
